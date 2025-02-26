@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/go-co-op/gocron"
-	"github.com/twilio/twilio-go"
-	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
 // Configuration
@@ -15,11 +15,11 @@ const (
 	websiteURL    = "https://example.com" // آدرس وب‌سایت خود را وارد کنید
 	checkInterval = 5 * time.Minute       // بازه زمانی بررسی (مثلاً ۵ دقیقه)
 
-	// Twilio credentials
-	twilioAccountSid     = "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" // شناسه حساب Twilio
-	twilioAuthToken      = "your_auth_token"                 // توکن احراز هویت Twilio
-	twilioPhoneNumber    = "+1234567890"                     // شماره تلفن Twilio شما
-	recipientPhoneNumber = "+989123456789"                   // شماره تلفن گیرنده پیامک
+	// Asanak credentials (جایگزین اطلاعات درست کنید)
+	asanakAPIURL         = "https://api.asanak.ir/sms/send" // URL API آسانک
+	asanakAPIKey         = "YOUR_API_KEY"                   // کلید API آسانک شما
+	asanakPhoneNumber    = "YOUR_ASANAK_NUMBER"             // شماره تلفن آسانک شما
+	recipientPhoneNumber = "+989123456789"                  // شماره تلفن گیرنده پیامک
 )
 
 func main() {
@@ -60,22 +60,31 @@ func checkWebsite(url string) error {
 func sendSMS(message string) {
 	fmt.Println("Sending SMS...")
 
-	client := twilio.NewRestClient(twilioAccountSid, twilioAuthToken)
+	// Create the request body
+	data := url.Values{}
+	data.Set("apikey", asanakAPIKey)
+	data.Set("receptor", recipientPhoneNumber)
+	data.Set("message", message)
+	data.Set("originator", asanakPhoneNumber)
 
-	params := &twilioApi.CreateMessageParams{
-		To:   twilio.String(recipientPhoneNumber),
-		From: twilio.String(twilioPhoneNumber),
-		Body: twilio.String(message),
-	}
-
-	resp, err := client.Api.CreateMessage(params)
+	// Create the HTTP request
+	resp, err := http.PostForm(asanakAPIURL, data)
 	if err != nil {
-		fmt.Printf("Twilio error: %s\n", err)
-	} else {
-		if resp.Status != nil {
-			fmt.Printf("SMS sent successfully! Status: %s\n", *resp.Status)
-		} else {
-			fmt.Println("SMS sent successfully!")
-		}
+		fmt.Printf("Asanak error: %s\n", err)
+		return
 	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response body: %s\n", err)
+		return
+	}
+
+	// Print the response from Asanak
+	fmt.Printf("Asanak response: %s\n", string(body))
+
+	// You might want to parse the response to check for success
+	// and handle any errors reported by Asanak.
 }
