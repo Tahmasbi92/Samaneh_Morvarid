@@ -22,7 +22,7 @@ const (
 	recipientPhoneNumber = "+989123456789"                  // شماره تلفن گیرنده پیامک
 )
 
-func main() {
+func main() {jjjjjjjjooo
 	s := gocron.NewScheduler(time.UTC)
 
 	// Define the job
@@ -34,7 +34,7 @@ func main() {
 
 func checkWebsiteAndSendSMS() {
 	fmt.Println("Checking website status...")
-	err := checkWebsite(websiteURL)
+	err := checkWebsite(websiteURL)wwwwww
 	if err != nil {
 		fmt.Printf("Website is down: %s\n", err)
 		sendSMS("Website is down! Please check immediately.")
