@@ -11,11 +11,12 @@ import (
 
 // Configuration
 const (
-	websiteURL          = "00000"         // آدرس وب‌سایت خود را وارد کنید
+	websiteURL          = "00"            // آدرس وب‌سایت خود را وارد کنید
 	checkInterval       = 5 * time.Minute // بازه زمانی بررسی (مثلاً ۵ دقیقه)
-	asanakUsername      = "00000"         // نام کاربری آسانک
-	asanakPassword      = "00000"         // رمز عبور آسانک
-	recieverPhoneNumber = "000000"        // شماره تلفن گیرنده پیامک
+	asanakUsername      = "0"             // نام کاربری آسانک
+	asanakPassword      = "0"
+	source              = "ه"
+	recieverPhoneNumber = "0" // شماره تلفن گیرنده پیامک
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 func checkWebsiteAndSendSMS() {
 	fmt.Println("Checking website status...")
-	err := checkWebsite("00000")
+	err := checkWebsite("0")
 	if err != nil {
 		fmt.Printf("Website is down: %s\n", err)
 		sendSMS("وب‌سایت خارج از دسترس است! لطفاً فوراً بررسی کنید.")
@@ -57,13 +58,13 @@ func sendSMS(message string) {
 	fmt.Println("Sending SMS...")
 
 	data := url.Values{}
-	data.Set("00000", asanakUsername)
-	data.Set("000000", asanakPassword)
-	data.Set("000000", recieverPhoneNumber)
-	data.Set("و000000", message)
+	data.Set("0", asanakUsername)
+	data.Set("0", asanakPassword)
+	data.Set("0", recieverPhoneNumber)
+	data.Set("وب‌سایت خارج از دسترس است! لطفاً فوراً بررسی کنید.", message)
 
 	// ارسال درخواست POST به API آسانک
-	resp, err := http.PostForm("https://000000", data)
+	resp, err := http.PostForm("0", data)
 	if err != nil {
 		fmt.Printf("Error sending SMS: %s\n", err)
 		return
