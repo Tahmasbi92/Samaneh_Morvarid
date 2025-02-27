@@ -2,54 +2,77 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
+
+	"github.com/go-co-op/gocron"
 )
 
+// Configuration
 const (
-	asanakAPIURL   = "https://api.asanak.ir/v1/sms/send" // جایگزین کنید
-	asanakUsername = "YOUR_ASANAK_USERNAME"              // جایگزین کنید
-	asanakPassword = "YOUR_ASANAK_PASSWORD"              // جایگزین کنید
-	receptor       = "YOUR_PHONE_NUMBER"                 // جایگزین کنید
+	websiteURL          = "https://example.com"  // آدرس وب‌سایت خود را وارد کنید
+	checkInterval       = 5 * time.Minute        // بازه زمانی بررسی (مثلاً ۵ دقیقه)
+	asanakUsername      = "your_asanak_username" // نام کاربری آسانک
+	asanakPassword      = "your_asanak_password" // رمز عبور آسانک
+	recieverPhoneNumber = "09123456789"          // شماره تلفن گیرنده پیامک
 )
 
-func sendSMS(message string) error {
-	// ایجاد پارامترهای درخواست
-	data := url.Values{}
-	data.Set("username", asanakUsername)
-	data.Set("password", asanakPassword)
-	data.Set("receptor", receptor)
-	data.Set("message", message)
+func main() {
+	s := gocron.NewScheduler(time.UTC)
 
-	// ایجاد درخواست POST
-	resp, err := http.PostForm(asanakAPIURL, data)
+	// Define the job
+	s.Every(checkInterval).Do(checkWebsiteAndSendSMS)
+
+	// Start the scheduler
+	s.StartBlocking()
+}
+
+func checkWebsiteAndSendSMS() {
+	fmt.Println("Checking website status...")
+	err := checkWebsite(websiteURL)
 	if err != nil {
-		return fmt.Errorf("error sending request: %w", err)
+		fmt.Printf("Website is down: %s\n", err)
+		sendSMS("وب‌سایت خارج از دسترس است! لطفاً فوراً بررسی کنید.")
+	} else {
+		fmt.Println("Website is up and running.")
+	}
+}
+
+func checkWebsite(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
 
-	// خواندن بدنه پاسخ
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response body: %w", err)
-	}
-
-	// بررسی وضعیت پاسخ
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("request failed with status code: %d, body: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("HTTP status code: %d", resp.StatusCode)
 	}
-
-	// پردازش پاسخ (بر اساس فرمت پاسخ API آسانک)
-	fmt.Println("SMS sent successfully, response:", string(body))
 
 	return nil
 }
 
-func main() {
-	message := "This is a test message from Go program"
-	err := sendSMS(message)
+func sendSMS(message string) {
+	fmt.Println("Sending SMS...")
+
+	data := url.Values{}
+	data.Set("username", asanakUsername)
+	data.Set("password", asanakPassword)
+	data.Set("receptor", recieverPhoneNumber)
+	data.Set("message", message)
+
+	// ارسال درخواست POST به API آسانک
+	resp, err := http.PostForm("https://api.asanak.ir/v1/sms/send", data)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Printf("Error sending SMS: %s\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("SMS sent successfully!")
+	} else {
+		fmt.Printf("Failed to send SMS. Status code: %d\n", resp.StatusCode)
 	}
 }
